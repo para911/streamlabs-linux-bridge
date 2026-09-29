@@ -1,38 +1,88 @@
 PREFIX="$HOME/.local/share/streamlabs"
-UD="$PREFIX/drive_c/users/$(ls "$PREFIX/drive_c/users" 2>/dev/null | grep -v 'Public\|Default' | head -1)/AppData/Roaming/slobs-client"
 export WINEPREFIX="$PREFIX"
+export WINEDEBUG=-all
+
+LOCK="$PREFIX/.launch.lock"
+mkdir -p "$PREFIX"
+exec 9>"$LOCK"
+if ! flock -w 180 9; then
+	echo "Another launch is already in progress (waited 3 minutes)." >&2
+	exit 1
+fi
+
+ud_dir() {
+	# The user-data-dir is named after the Windows user, which is not always the same
+	# as the Linux user.
+	for d in "$PREFIX"/drive_c/users/*/AppData/Roaming/slobs-client; do
+		[ -d "$d" ] && printf '%s\n' "$d" && return
+	done
+}
+
+UD="$(ud_dir)"
+
+# Main processes only: Electron spawns children with --type=, and those are not instances.
+main_pids() {
+	for p in $(pgrep -f 'Streamlabs OBS[.]exe' 2>/dev/null); do
+		[ -r "/proc/$p/cmdline" ] || continue
+		tr '\0' ' ' <"/proc/$p/cmdline" | grep -q -- '--type=' || printf '%s\n' "$p"
+	done
+}
+
+engine_up() { pgrep -f 'obs64[.]exe' >/dev/null 2>&1; }
 
 clean() {
 	pkill -9 -f 'Streamlabs OBS[.]exe' 2>/dev/null
 	pkill -9 -f 'obs64[.]exe' 2>/dev/null
 	pkill -9 -f 'resources/app.asar' 2>/dev/null
 	sleep 3
-	export WINEDEBUG=-all
 	wineserver -k 2>/dev/null
 	sleep 2
-	# The app keeps its Realm lock in the user-data-dir, not as an Electron Singleton file.
+	# The Realm lock lives in the user-data-dir, not as an Electron Singleton file.
 	rm -f "$UD"/*.realm.lock "$UD"/Singleton* 2>/dev/null
 }
 
-alive() {
-	# A start only counts as successful if obs64.exe is still alive after ten seconds.
-	sleep 10
-	pgrep -f 'obs64[.]exe' >/dev/null
+wait_ready() {
+	# Poll for the engine instead of guessing how long startup takes.
+	i=0
+	while [ "$i" -lt 120 ]; do
+		engine_up && return 0
+		if [ "$i" -ge 15 ] && ! main_pids | grep -q .; then
+			return 1   # the app itself is gone; no point waiting
+		fi
+		sleep 2
+		i=$((i + 2))
+	done
+	return 1
 }
 
-clean
-i=1
-while [ "$i" -le 3 ]; do
-	echo "attempt $i: launching Streamlabs..."
-	setsid nohup "$HOME/.local/bin/streamlabs" >>"$HOME/.local/share/streamlabs/launch.log" 2>&1 &
-	if alive; then
-		echo "Streamlabs is up (obs64 running). Window appears in 30-60 seconds."
-		echo "$(date '+%F %T') Streamlabs up (attempt $i)" >>"$HOME/.local/share/streamlabs/launch.log"
+instances=$(main_pids | grep -c .)
+if [ "$instances" -gt 1 ]; then
+	echo "Found $instances Streamlabs instances running at once; clearing them."
+	clean
+elif [ "$instances" -eq 1 ]; then
+	if engine_up; then
+		echo "Streamlabs is already running with a live engine."
 		exit 0
 	fi
-	echo "  failed: obs64 died. Clearing leftover Wine state and retrying."
+	echo "Streamlabs is running but its OBS engine died; restarting it."
 	clean
-	i=$((i + 1))
+fi
+
+attempt=1
+while [ "$attempt" -le 3 ]; do
+	echo "Attempt $attempt: launching Streamlabs..."
+	# 9>&- matters: without it the child inherits the lock fd and keeps the lock held
+	# for as long as Streamlabs runs, so the next invocation would block.
+	setsid nohup "$HOME/.local/bin/streamlabs" >>"$PREFIX/launch.log" 2>&1 9>&- &
+	if wait_ready; then
+		echo "Streamlabs is up. The window appears shortly."
+		echo "$(date '+%F %T') Streamlabs up (attempt $attempt)" >>"$PREFIX/launch.log"
+		exit 0
+	fi
+	echo "  The engine did not come up. Clearing leftover Wine state and retrying."
+	clean
+	attempt=$((attempt + 1))
 done
+
 echo "Failed 3 times. Run 'wineserver -k', wait 5 seconds, then try again." >&2
 exit 1
