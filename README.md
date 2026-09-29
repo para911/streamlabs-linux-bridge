@@ -1,7 +1,7 @@
 # streamlabs-linux-bridge
 
 Run Streamlabs Desktop (Windows) on Linux through Wine, with working screen capture,
-including vertical 9:16 output for TikTok.
+including vertical 9:16 output.
 
 ## The problem
 
