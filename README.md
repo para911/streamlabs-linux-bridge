@@ -93,18 +93,6 @@ Run this while OBS is closed. OBS rewrites its scene file on exit, so edits made
 is running are lost.
 
 
-```
-install.sh                  installer
-bin/desktop-bridge          starts mediamtx, OBS and Streamlabs
-bin/streamlabs              Wine launcher
-bin/streamlabs-retry        launcher wrapper that retries failed starts
-scripts/inject-source.py    adds the RTMP source to a Streamlabs scene collection
-scripts/fix-scene.py        cleans up the OBS scene and sets canvas orientation
-config/                     OBS profile, mediamtx config, desktop entry
-docs/TROUBLESHOOTING.md     known failure modes and their causes
-tests/test_fix_scene.py     self-check for the scene script
-```
-
 ## Notes
 
 - Audio from OBS is already carried by the RTMP stream, so the Media Source is muted in
