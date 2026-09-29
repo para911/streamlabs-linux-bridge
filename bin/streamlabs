@@ -1,5 +1,3 @@
-#!/bin/sh
-# Wine wrapper for Streamlabs Desktop. install.sh sets up the prefix and the app.
 export WINEPREFIX="$HOME/.local/share/streamlabs"
 export WINEDEBUG=-all
 # Native msvcp140/vcruntime140 from vcrun2019 crash obs64 with a NULL dereference,
