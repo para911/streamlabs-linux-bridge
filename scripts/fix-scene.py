@@ -1,19 +1,3 @@
-#!/usr/bin/env python3
-"""Clean up an OBS scene so the feed shows one full-frame capture instead of a collage.
-
-The scene often ends up with several duplicated Screen Capture sources, each scaled down
-and positioned at random. Streamlabs then shows a grid of small desktops on a black
-background.
-
-Important: OBS recomputes position and scale from the pos_rel/scale_rel/scale_ref fields
-when they exist, and ignores absolute pos/scale written by hand. This script deletes those
-fields, which is why it works where editing the JSON manually does not.
-
-    python3 scripts/fix-scene.py                       # landscape, desktop fills the frame
-    python3 scripts/fix-scene.py --portrait 1080x1920  # vertical: text top, desktop middle, webcam bottom
-
-Run it while OBS is closed; OBS rewrites its scene file on exit.
-"""
 import argparse
 import json
 import pathlib
@@ -46,8 +30,6 @@ def main() -> None:
     if args.portrait:
         W, H = parse_res(args.portrait)
     else:
-        # The scene only stores custom_size if the user changed it; otherwise the real
-        # size lives in the OBS profile. Last resort: 1920x1080.
         scene = next(s for s in d["sources"] if s["id"] == "scene")
         cs = scene["settings"].get("custom_size")
         if isinstance(cs, dict) and cs.get("x") and cs.get("y"):
@@ -83,7 +65,6 @@ def main() -> None:
         for stale in ("pos_rel", "scale_rel", "scale_ref", "bounds_rel"):
             item.pop(stale, None)
 
-    # A 16:9 desktop fitted to the width leaves a band above and below on a vertical canvas.
     desktop_w = 1920
     scale = W / desktop_w
     place(keep, W / 2, H / 2, scale=scale)
