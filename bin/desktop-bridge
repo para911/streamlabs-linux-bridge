@@ -1,5 +1,3 @@
-#!/bin/sh
-# Starts the full video path: mediamtx, then OBS (already streaming), then Streamlabs.
 MTX="$HOME/.local/share/mediamtx/mediamtx"
 CFG="$HOME/.local/share/mediamtx/local.yml"
 COLLECTION="${SLC_BRIDGE_COLLECTION:-}"
