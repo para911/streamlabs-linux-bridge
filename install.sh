@@ -1,6 +1,3 @@
-#!/usr/bin/env bash
-# One-shot installer: Wine prefix, Streamlabs payload, mediamtx, OBS profile, launchers.
-# It does not touch any existing OBS profile.
 set -euo pipefail
 
 VERSION="1.21.9"
