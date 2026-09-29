@@ -92,14 +92,6 @@ python3 scripts/fix-scene.py --portrait 1080x1920
 Run this while OBS is closed. OBS rewrites its scene file on exit, so edits made while it
 is running are lost.
 
-## Going live on TikTok
-
-TikTok cannot be authorized from inside the app the way Twitch can. Get the Server URL and
-Stream Key from the TikTok LIVE dashboard (mobile app or web), then paste both into
-Streamlabs -> Settings -> Stream -> TikTok. TikTok requires 1000 followers before it shows a
-stream key at all.
-
-## Layout
 
 ```
 install.sh                  installer
@@ -121,6 +113,20 @@ tests/test_fix_scene.py     self-check for the scene script
   `Failed to open media` after a few minutes of inactivity.
 - `v4l2loopback` is a valid alternative to RTMP, but it requires signing a kernel module
   for Secure Boot and rebooting. This project avoids kernel changes entirely.
+  
+## Open source & contributions
+
+This project is open source. Feel free to fork it, modify it, fix bugs, improve existing
+features, or add support for other Linux distributions.
+
+Contributions and pull requests are welcome, especially for improving compatibility with
+Linux distributions that are not currently supported.
+
+The project currently focuses primarily on Fedora and RPM-based distributions, but support
+for additional Linux distributions is planned for future updates.
+
+If you manage to get it working on another distribution, feel free to contribute your
+changes back to the project so other users can benefit from them as well.
 
 ## License
 
