@@ -1,15 +1,3 @@
-#!/usr/bin/env python3
-"""Add the RTMP source to a Streamlabs scene collection.
-
-The app must be closed: it rewrites the collection on exit, so edits made while it is
-running are lost.
-
-    python3 scripts/inject-source.py
-    python3 scripts/inject-source.py --url rtmp://127.0.0.1:1935/live/desk
-
-For a source you can manage from the UI afterwards, add it manually instead:
-Sources -> + -> Media File, uncheck "Local File", and enter the same URL.
-"""
 import argparse
 import json
 import pathlib
