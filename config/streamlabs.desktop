@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Streamlabs Desktop
+Comment=Streaming software (Wine)
+Exec=streamlabs
+Icon=streamlabs
+Terminal=false
+Type=Application
+Categories=AudioVideo;Video;

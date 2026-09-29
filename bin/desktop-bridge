@@ -1,0 +1,32 @@
+#!/bin/sh
+# Starts the full video path: mediamtx, then OBS (already streaming), then Streamlabs.
+MTX="$HOME/.local/share/mediamtx/mediamtx"
+CFG="$HOME/.local/share/mediamtx/local.yml"
+COLLECTION="${SLC_BRIDGE_COLLECTION:-}"
+
+pgrep -x mediamtx >/dev/null || setsid nohup "$MTX" "$CFG" >>"$HOME/.local/share/mediamtx/mediamtx.log" 2>&1 &
+sleep 2
+
+if pgrep -x obs >/dev/null; then
+	echo "OBS: already running (profile must be 'localbridge' so it pushes to rtmp://127.0.0.1:1935/live)"
+else
+	# Without --collection OBS reuses the last scene collection the user had open.
+	# Set SLC_BRIDGE_COLLECTION to force a specific one.
+	set -- --profile localbridge --startstreaming --minimize-to-tray
+	[ -n "$COLLECTION" ] && set -- --collection "$COLLECTION" "$@"
+	setsid nohup obs "$@" >/dev/null 2>&1 &
+	sleep 5
+	echo "OBS: launched and streaming to mediamtx"
+fi
+
+if pgrep -f 'Streamlabs OBS[.]exe' >/dev/null; then
+	echo "Streamlabs: already running"
+else
+	# Use the retrying launcher: the app sometimes dies during startup.
+	"$HOME/.local/bin/streamlabs-retry" >/dev/null 2>&1 &
+	echo "Streamlabs: launching (window appears in about a minute)"
+fi
+
+code=$(curl -s -m 5 -o /dev/null -w '%{http_code}' http://127.0.0.1:8888/live/desk/index.m3u8)
+echo "mediamtx: $(pgrep -x mediamtx >/dev/null && echo running || echo DOWN) | playlist HTTP $code"
+echo "If the Streamlabs preview is black: close Streamlabs and run this script again."

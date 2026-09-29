@@ -1,0 +1,32 @@
+# Local only: OBS publishes here and Streamlabs (Wine) reads from here.
+# Nothing is bound to the LAN.
+logLevel: info
+logDestinations: [stdout]
+api: false
+metrics: false
+pprof: false
+playback: false
+rtsp: false
+srt: false
+webrtc: false
+moq: false
+hls: true
+hlsAddress: 127.0.0.1:8888
+hlsVariant: mpegts
+hlsAlwaysRemux: yes
+hlsSegmentDuration: 1s
+rtmp: true
+rtmpAddress: 127.0.0.1:1935
+rtmpEncryption: "no"
+authInternalUsers:
+  - user: any
+    pass:
+    ips: ["127.0.0.1", "::1"]
+    permissions:
+      - action: publish
+        path:
+      - action: read
+        path:
+paths:
+  all_others:
+    source: publisher

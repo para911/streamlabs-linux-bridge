@@ -1,0 +1,8 @@
+#!/bin/sh
+# Wine wrapper for Streamlabs Desktop. install.sh sets up the prefix and the app.
+export WINEPREFIX="$HOME/.local/share/streamlabs"
+export WINEDEBUG=-all
+# Native msvcp140/vcruntime140 from vcrun2019 crash obs64 with a NULL dereference,
+# so keep Wine's builtin versions.
+export WINEDLLOVERRIDES="msvcp140=b;vcruntime140=b;vcruntime140_1=b;ucrtbase=b;mscoree,mshtml=;winemenubuilder.exe=d"
+exec wine "$WINEPREFIX/drive_c/Program Files/Streamlabs/Streamlabs OBS.exe" --no-sandbox --disable-gpu "$@"

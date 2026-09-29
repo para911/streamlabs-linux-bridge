@@ -1,0 +1,42 @@
+#!/bin/sh
+# Streamlabs sometimes fails to start under Wine because obs64.exe dies partway through
+# display initialization. The leftover Wine processes and a stale Realm lock make the next
+# attempt fail too, so this clears them first and retries until the app is really up.
+PREFIX="$HOME/.local/share/streamlabs"
+UD="$PREFIX/drive_c/users/$(ls "$PREFIX/drive_c/users" 2>/dev/null | grep -v 'Public\|Default' | head -1)/AppData/Roaming/slobs-client"
+export WINEPREFIX="$PREFIX"
+
+clean() {
+	pkill -9 -f 'Streamlabs OBS[.]exe' 2>/dev/null
+	pkill -9 -f 'obs64[.]exe' 2>/dev/null
+	pkill -9 -f 'resources/app.asar' 2>/dev/null
+	sleep 3
+	export WINEDEBUG=-all
+	wineserver -k 2>/dev/null
+	sleep 2
+	# The app keeps its Realm lock in the user-data-dir, not as an Electron Singleton file.
+	rm -f "$UD"/*.realm.lock "$UD"/Singleton* 2>/dev/null
+}
+
+alive() {
+	# A start only counts as successful if obs64.exe is still alive after ten seconds.
+	sleep 10
+	pgrep -f 'obs64[.]exe' >/dev/null
+}
+
+clean
+i=1
+while [ "$i" -le 3 ]; do
+	echo "attempt $i: launching Streamlabs..."
+	setsid nohup "$HOME/.local/bin/streamlabs" >>"$HOME/.local/share/streamlabs/launch.log" 2>&1 &
+	if alive; then
+		echo "Streamlabs is up (obs64 running). Window appears in 30-60 seconds."
+		echo "$(date '+%F %T') Streamlabs up (attempt $i)" >>"$HOME/.local/share/streamlabs/launch.log"
+		exit 0
+	fi
+	echo "  failed: obs64 died. Clearing leftover Wine state and retrying."
+	clean
+	i=$((i + 1))
+done
+echo "Failed 3 times. Run 'wineserver -k', wait 5 seconds, then try again." >&2
+exit 1
